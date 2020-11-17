@@ -1,0 +1,37 @@
+{
+    "APP": "BROIDERY",
+    "CREDENTIALS": "GitHub-SSH",
+    "CHECKOUTS":    [
+        {
+            "WS": "/Users/lucas/.jenkins/workspace/Broidery/Broidery-backend",
+            "SCM_BRANCH": "*/development",
+            "CREDENTIAL_ID": "f7caec0e-9b01-4fd6-81f9-08b62e752c96",
+            "SCM_URL": "https://github.com/SpiritoLucas/Broidery-backend.git"
+        },
+        {
+            "WS": "/Users/lucas/.jenkins/workspace/Broidery/Broidery-frontend",
+            "SCM_BRANCH": "*/development",
+            "CREDENTIAL_ID": "f7caec0e-9b01-4fd6-81f9-08b62e752c96",
+            "SCM_URL": "https://github.com/SpiritoLucas/Broidery-frontend.git"
+        }
+    ],
+    "ENVIRONMENT": [
+        {
+            "NAME": "DEV",
+            "LABEL": "BAJOS",
+            "BACKEND_WS":"Broidery-backend/Broidery/Broidery.Api.DockerStartup",
+            "FRONTEND_WS":"Broidery-frontend"
+        },
+        {
+            "NAME": "PRD",
+            "LABEL": "ALTOS",
+            "BACKEND_WS":"Broidery-backend/Broidery/Broidery.Api.DockerStartup",
+            "FRONTEND_WS":"Broidery-frontend"
+        }
+    ],
+    "MAILS_NOTIFICATION_TO": "spirito.lucas87@gmail.com" ,
+    "MAIL_SUBJECT_SUCCESS": "Broidery esta nuevamente en linea",
+    "MAIL_BODY_SUCCESS": "Please visit http://192.168.0.135:8081/ for further information",
+    "MAIL_SUBJECT_FAILURE":"La web de Broidery esta rota",
+    "MAIL_BODY_FAILURE":"Pease, find luquitas because its broken. http://192.168.0.135 for changing configs"
+}

@@ -1,0 +1,157 @@
+// CONFIG DE LA APLICACION
+String configFile = "/Volumes/TOSH-600/Broidery/Jenkins/Broidery-pipeline/config.json"
+// FIN CONFIG DE LA APLICACION
+
+node('master') {
+    // Get configuration file.
+    configuration = readJSON file: configFile
+    
+    // Get environmentProperties
+    configuration.ENVIRONMENTS.each {
+        if(it.NAME == ENVIRONMENT) {
+            environmentProperties = it
+            }
+        }
+    
+    mailList = configuration.MAILS_NOTIFICATION_TO
+}
+
+pipeline {
+    agent any
+    environment{
+        SERVER_CREDENTIALS = credentials("${configuration.CREDENTIALS}")
+    }
+    tools {
+        nodejs  'node'
+    }
+    parameters {
+        choice(name:'ENVIRONMENT', choices: ['DEV','PRD'], description: '<h4>Ambiente a deployar</h4>')
+    }
+    stages {
+        stage('DELETE LAST BUILD') {
+            steps {
+                sh " rm -rf *"
+                sh "rm -rf /usr/local/var/www/*"
+            }
+        }
+
+        stage('CLONE REPO DOTNET') {
+            steps {
+                sh '''
+                    mkdir Broidery-backend
+                    cd Broidery-backend
+                   '''
+                  ws("${configuration.CHECKOUTS[0].WS}") {
+                      checkout([
+                         $class: 'GitSCM',
+                         doGenerateSubmoduleConfigurations: false,
+                         userRemoteConfigs: [[
+                             url: "${configuration.CHECKOUTS[0].SCM_URL}",
+                             credentialsId: "${SERVER_CREDENTIALS}"
+                         ]],
+                         branches: [ [name: "${configuration.CHECKOUTS[0].SCM_BRANCH}" ] ]
+                         ])
+                  }     
+                //invokeJob('TEMPLATES/SOURCE_CHECKOUT_GIT',['BRANCH': "${configuration.CHECKOUTS[0].SCM_BRANCH}",'WS':("${configuration.CHECKOUTS[0].WS}" + "\\SOURCE"),'REPOSITORY': "${configuration.CHECKOUTS[0].SCM_URL}" ])
+            }
+        }
+        
+        stage('CLONE REPO ANGULAR') {
+            steps {
+                sh ''' 
+                    mkdir Broidery-frontend
+                    cd Broidery-frontend
+                    pwd
+                   '''
+                ws("${configuration.CHECKOUTS[1].WS}") {
+                    checkout([
+                        $class: 'GitSCM',
+                        doGenerateSubmoduleConfigurations: false,
+                        userRemoteConfigs: [[
+                            url: "${configuration.CHECKOUTS[1].SCM_URL}",
+                            credentialsId: "${SERVER_CREDENTIALS}"
+                        ]],
+                        branches: [ [name: "${configuration.CHECKOUTS[1].SCM_BRANCH}" ] ]
+                    ])
+                }
+            }
+        }
+        
+        stage('NPM INSTALL'){
+            steps {
+                
+                sh    """
+                      cd Broidery-frontend
+                      pwd
+                      npm i
+                      npm run build
+                      """
+                
+            }
+        }
+
+
+        stage('BUILD & RESTORE') {
+            when {
+                expression {
+                    params.ENVIRONMENT == 'DEV'
+                }
+            }
+            steps {
+                sh '''#!/bin/zsh
+                pwd
+                ls
+                export PATH=/usr/local/share/dotnet:$PATH
+                cd Broidery-backend/Broidery/Broidery.Api.DockerStartup
+                dotnet restore
+                dotnet build  
+                dotnet publish --configuration Release --runtime osx-x64             
+                '''
+            }
+        }
+
+        stage('ZIP BINARY FILES') {
+            steps {
+                // sh '''#!/bin/zsh 
+                // cd Broidery-backend/Broidery/Broidery.Api.DockerStartup/bin/Debug/netcoreapp3.1/
+                // zip -r ./publish.zip ./publish
+                // cd /Users/lucas/.jenkins/workspace/Broidery/Broidery-frontend/
+                // zip -r ./dist.zip ./dist 
+                // mv /Users/lucas/.jenkins/workspace/Broidery/Broidery-backend/Broidery/Broidery.Api.DockerStartup/bin/Debug/netcoreapp3.1/publish.zip .
+                // mv dist.zip ../
+                // ls ../
+                // '''
+                sh "ls"
+            }
+        }
+        
+        stage('DEPLOY TO LOCAL NGINX') {
+            steps {                
+                sh 'cp -r Broidery-frontend/dist/Broidery-frontend/ /usr/local/var/www/ '
+                sh 'cp -r Broidery-backend/Broidery/Broidery.Api.DockerStartup/bin/Release/netcoreapp3.1/osx-x64/ /usr/local/var/www/'
+                /*
+                sh '''
+                supervisorctl restart broidery
+                nginx -s reload
+                    '''
+                */
+                echo 'FRONTEND PUBLICADO EN http://localhost:8081/ Y EN http://192.168.0.135:8081/'
+                echo 'BACKEND PUBLICADO EN http://localhost:8082/ Y EN http://192.168.0.135:8082/'
+            }
+        }        
+    }
+    post {
+            success{
+                 mail (to: "${mailList}",
+                        subject: "${configuration.MAIL_SUBJECT_SUCCESS}",
+                        body: "${configuration.MAIL_BODY_SUCCESS}"
+                );
+            }
+            failure{
+                 mail (to: "${mailList}",
+                        subject: "${configuration.MAIL_SUBJECT_FAILURE}",
+                        body: "${configuration.MAIL_BODY_FAILURE}"
+                );
+            }            
+    }
+}
