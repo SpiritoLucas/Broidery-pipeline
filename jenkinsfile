@@ -1,3 +1,6 @@
+// Rev 0.0.2
+@Library('jenkins-library-local') _
+
 // CONFIG DE LA APLICACION
 String configFile = "/Volumes/TOSH-600/Broidery/Jenkins/Broidery-pipeline/config.json"
 // FIN CONFIG DE LA APLICACION
@@ -25,55 +28,35 @@ pipeline {
         nodejs  'node'
     }
     parameters {
-        choice(name:'ENVIRONMENT', choices: ['DEV','PRD'], description: '<h4>Ambiente a deployar</h4>')
+        choice(name:'ENVIRONMENT', choices: ['DEV','PRD'], description: "<h4>Ambiente a deployar</h4>")
     }
     stages {
         stage('DELETE LAST BUILD') {
             steps {
                 sh " rm -rf *"
                 sh "rm -rf /usr/local/var/www/*"
+                // sh '''
+                //     export PATH=/usr/local/share/supervisor:$PATH
+                //     export PATH=/usr/local/share/nginx:$PATH
+                //     supervisorctl stop broidery
+                //     nginx -s stop
+                // '''
             }
         }
 
         stage('CLONE REPO DOTNET') {
             steps {
-                sh '''
-                    mkdir Broidery-backend
-                    cd Broidery-backend
-                   '''
-                  ws("${configuration.CHECKOUTS[0].WS}") {
-                      checkout([
-                         $class: 'GitSCM',
-                         doGenerateSubmoduleConfigurations: false,
-                         userRemoteConfigs: [[
-                             url: "${configuration.CHECKOUTS[0].SCM_URL}",
-                             credentialsId: "${SERVER_CREDENTIALS}"
-                         ]],
-                         branches: [ [name: "${configuration.CHECKOUTS[0].SCM_BRANCH}" ] ]
-                         ])
-                  }     
-                //invokeJob('TEMPLATES/SOURCE_CHECKOUT_GIT',['BRANCH': "${configuration.CHECKOUTS[0].SCM_BRANCH}",'WS':("${configuration.CHECKOUTS[0].WS}" + "\\SOURCE"),'REPOSITORY': "${configuration.CHECKOUTS[0].SCM_URL}" ])
+                sh "mkdir Broidery-backend"
+                invokeJob('TEMPLATES/SOURCE_CHECKOUT_GIT',['WS':configuration.CHECKOUTS[0].WS +"/Repositorio", 'REPOSITORY': configuration.CHECKOUTS[0].SCM_URL, 'BRANCH': configuration.CHECKOUTS[0].SCM_BRANCH ])
+                sh "cp -r /Users/lucas/.jenkins/workspace/TEMPLATES/SOURCE_CHECKOUT_GIT/ /Users/lucas/.jenkins/workspace/Broidery/Broidery-backend"
             }
         }
         
         stage('CLONE REPO ANGULAR') {
             steps {
-                sh ''' 
-                    mkdir Broidery-frontend
-                    cd Broidery-frontend
-                    pwd
-                   '''
-                ws("${configuration.CHECKOUTS[1].WS}") {
-                    checkout([
-                        $class: 'GitSCM',
-                        doGenerateSubmoduleConfigurations: false,
-                        userRemoteConfigs: [[
-                            url: "${configuration.CHECKOUTS[1].SCM_URL}",
-                            credentialsId: "${SERVER_CREDENTIALS}"
-                        ]],
-                        branches: [ [name: "${configuration.CHECKOUTS[1].SCM_BRANCH}" ] ]
-                    ])
-                }
+                sh """mkdir "${configuration.CHECKOUTS[1].WS}" """
+                        invokeJob('TEMPLATES/SOURCE_CHECKOUT_GIT',['WS': configuration.CHECKOUTS[1].WS +"/Repositorio",'REPOSITORY': configuration.CHECKOUTS[1].SCM_URL, 'BRANCH': configuration.CHECKOUTS[1].SCM_BRANCH ])
+                        sh "cp -r /Users/lucas/.jenkins/workspace/TEMPLATES/SOURCE_CHECKOUT_GIT/ /Users/lucas/.jenkins/workspace/Broidery/Broidery-frontend"
             }
         }
         
@@ -81,8 +64,7 @@ pipeline {
             steps {
                 
                 sh    """
-                      cd Broidery-frontend
-                      pwd
+                      cd "${configuration.CHECKOUTS[1].WS}"
                       npm i
                       npm run build
                       """
@@ -98,9 +80,7 @@ pipeline {
                 }
             }
             steps {
-                sh '''#!/bin/zsh
-                pwd
-                ls
+                sh '''
                 export PATH=/usr/local/share/dotnet:$PATH
                 cd Broidery-backend/Broidery/Broidery.Api.DockerStartup
                 dotnet restore
@@ -129,29 +109,18 @@ pipeline {
             steps {                
                 sh 'cp -r Broidery-frontend/dist/Broidery-frontend/ /usr/local/var/www/ '
                 sh 'cp -r Broidery-backend/Broidery/Broidery.Api.DockerStartup/bin/Release/netcoreapp3.1/osx-x64/ /usr/local/var/www/'
-                /*
-                sh '''
-                supervisorctl restart broidery
-                nginx -s reload
-                    '''
-                */
+
                 echo 'FRONTEND PUBLICADO EN http://localhost:8081/ Y EN http://192.168.0.135:8081/'
                 echo 'BACKEND PUBLICADO EN http://localhost:8082/ Y EN http://192.168.0.135:8082/'
             }
         }        
     }
     post {
-            success{
-                 mail (to: "${mailList}",
-                        subject: "${configuration.MAIL_SUBJECT_SUCCESS}",
-                        body: "${configuration.MAIL_BODY_SUCCESS}"
-                );
-            }
-            failure{
-                 mail (to: "${mailList}",
-                        subject: "${configuration.MAIL_SUBJECT_FAILURE}",
-                        body: "${configuration.MAIL_BODY_FAILURE}"
-                );
-            }            
+        always{
+            mail (to: "${mailList}",
+                subject: "Jenkins: " + configuration.APP + " | "  + ENVIRONMENT + " | " + " build nº" + BUILD_NUMBER ,
+                body: JOB_NAME + "´s build nº " + BUILD_NUMBER + " was a " +  "${currentBuild.currentResult}" + " \n" + "Visit our local jenkins for more changes at: " + "${configuration.LOCAL_JENKINS_URL}"
+            );               
+        }        
     }
 }
