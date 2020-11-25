@@ -5,6 +5,8 @@
 String configFile = "/Volumes/TOSH-600/Broidery/Jenkins/Broidery-pipeline/config.json"
 // FIN CONFIG DE LA APLICACION
 
+String RESULTADO = ""
+
 node('master') {
     // Get configuration file.
     configuration = readJSON file: configFile
@@ -117,10 +119,13 @@ pipeline {
     }
     post {
         always{
-            mail (to: "${mailList}",
+            script{    
+                env.RESULTADO = currentBuild.currentResult
+                emailext attachmentsPattern: '*.txt',
                 subject: "Jenkins: " + configuration.APP + " | "  + ENVIRONMENT + " | " + " build nº" + BUILD_NUMBER ,
-                body: JOB_NAME + "´s build nº " + BUILD_NUMBER + " was a " +  "${currentBuild.currentResult}" + " \n" + "Visit our local jenkins for more changes at: " + "${configuration.LOCAL_JENKINS_URL}"
-            );               
+                body: JOB_NAME + "´s build nº " + BUILD_NUMBER + " was a " +  "${env.RESULTADO}" + " \n" + "Visit our local jenkins for more changes at: " + "${configuration.LOCAL_JENKINS_URL}",
+                to: "${mailList}" 
+            }
         }        
     }
 }
