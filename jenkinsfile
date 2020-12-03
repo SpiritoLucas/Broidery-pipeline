@@ -57,38 +57,33 @@ pipeline {
         stage('CLONE REPO ANGULAR') {
             steps {
                 sh """mkdir "${configuration.CHECKOUTS[1].WS}" """
-                        invokeJob('TEMPLATES/SOURCE_CHECKOUT_GIT',['WS': configuration.CHECKOUTS[1].WS +"/Repositorio",'REPOSITORY': configuration.CHECKOUTS[1].SCM_URL, 'BRANCH': configuration.CHECKOUTS[1].SCM_BRANCH ])
-                        sh "cp -r /Users/lucas/.jenkins/workspace/TEMPLATES/SOURCE_CHECKOUT_GIT/ /Users/lucas/.jenkins/workspace/Broidery/Broidery-frontend"
+                invokeJob('TEMPLATES/SOURCE_CHECKOUT_GIT',['WS': configuration.CHECKOUTS[1].WS +"/Repositorio",'REPOSITORY': configuration.CHECKOUTS[1].SCM_URL, 'BRANCH': configuration.CHECKOUTS[1].SCM_BRANCH ])
+                sh "cp -r /Users/lucas/.jenkins/workspace/TEMPLATES/SOURCE_CHECKOUT_GIT/ /Users/lucas/.jenkins/workspace/Broidery/Broidery-frontend"
             }
         }
         
         stage('NPM INSTALL'){
             steps {
-                
-                sh    """
-                      cd "${configuration.CHECKOUTS[1].WS}"
-                      npm i
-                      npm run build
-                      """
-                
+            sh    """
+                    cd "${configuration.CHECKOUTS[1].WS}"
+                    npm i
+                    npm run build
+                    """
             }
         }
 
-
         stage('BUILD & RESTORE') {
             when {
-                expression {
-                    params.ENVIRONMENT == 'DEV'
-                }
+                expression { params.ENVIRONMENT == 'DEV' }
             }
             steps {
-                sh '''
-                export PATH=/usr/local/share/dotnet:$PATH
-                cd Broidery-backend/Broidery/Broidery.Api.DockerStartup
-                dotnet restore
-                dotnet build  
-                dotnet publish --configuration Release --runtime osx-x64             
-                '''
+            sh '''
+            export PATH=/usr/local/share/dotnet:$PATH
+            cd Broidery-backend/Broidery/Broidery.Api.DockerStartup
+            dotnet restore
+            dotnet build  
+            dotnet publish --configuration Release --runtime osx-x64                          
+            '''
             }
         }
 
@@ -111,11 +106,12 @@ pipeline {
             steps {                
                 sh 'cp -r Broidery-frontend/dist/Broidery-frontend/ /usr/local/var/www/ '
                 sh 'cp -r Broidery-backend/Broidery/Broidery.Api.DockerStartup/bin/Release/netcoreapp3.1/osx-x64/ /usr/local/var/www/'
-
+                sh 'date >> date.txt'
                 echo 'FRONTEND PUBLICADO EN http://localhost:8081/ Y EN http://192.168.0.135:8081/'
                 echo 'BACKEND PUBLICADO EN http://localhost:8082/ Y EN http://192.168.0.135:8082/'
             }
-        }        
+        }
+
     }
     post {
         always{
@@ -123,7 +119,7 @@ pipeline {
                 env.RESULTADO = currentBuild.currentResult
                 emailext attachmentsPattern: '*.txt',
                 subject: "Jenkins: " + configuration.APP + " | "  + ENVIRONMENT + " | " + " build nº" + BUILD_NUMBER ,
-                body: JOB_NAME + "´s build nº " + BUILD_NUMBER + " was a " +  "${env.RESULTADO}" + " \n" + "Visit our local jenkins for more changes at: " + "${configuration.LOCAL_JENKINS_URL}",
+                body: '''${SCRIPT, template="jenkins_dtv_3.template"}''',
                 to: "${mailList}" 
             }
         }        
