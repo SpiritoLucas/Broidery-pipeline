@@ -118,7 +118,7 @@ pipeline {
             script{    
                 env.RESULTADO = currentBuild.currentResult
                 emailext attachmentsPattern: '*.txt',
-                subject: "Jenkins: " + configuration.APP + " | "  + ENVIRONMENT + " | " + " build nº" + BUILD_NUMBER ,
+                subject: "Jenkins: " + configuration.APP + " | " + env.RESULTADO + " | "  + ENVIRONMENT + " | " + " build nº" + BUILD_NUMBER ,
                 body: '''${SCRIPT, template="jenkins_dtv_3.template"}''',
                 to: "${mailList}" 
             }
