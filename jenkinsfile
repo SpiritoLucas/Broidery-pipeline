@@ -61,7 +61,17 @@ pipeline {
                 sh "cp -r /Users/lucas/.jenkins/workspace/TEMPLATES/SOURCE_CHECKOUT_GIT/ /Users/lucas/.jenkins/workspace/Broidery/Broidery-frontend"
             }
         }
-        
+
+        stage('CODE ANALYSIS'){
+            steps{
+                withSonarQubeEnv('SonarQube'){
+                    script {
+                        def sonnarScannerHome = tool 'sonar-scanner'
+                     sh """${sonnarScannerHome}bin/sonar-scanner -Dsonar.projectKey=broideryBackend -Dsonar.projectName=Broidery-backend -Dsonar.projectVersion=1.0 -Dsonar.sourceEncoding=UTF-8 -Dsonar.visualstudio.enable=true -Dsonar.sources="${configuration.CHECKOUTS[0].WS}" -Dsonar.issuesReport.html.enable=true -Dsonar.host.url=http://192.168.0.135:9000 -Dsonar.projectBaseDir="${configuration.CHECKOUTS[0].WS}"/Broidery -Dsonar.visualstudio.solution=Broidery.sln """
+                    }
+                }
+            }
+        }
         stage('NPM INSTALL'){
             steps {
             sh    """
