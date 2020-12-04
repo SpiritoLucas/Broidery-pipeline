@@ -26,11 +26,8 @@ pipeline {
     environment{
         SERVER_CREDENTIALS = credentials("${configuration.CREDENTIALS}")
     }
-    tools {
-        nodejs  'node'
-    }
     parameters {
-        choice(name:'ENVIRONMENT', choices: ['DEV','PRD'], description: "<h4>Ambiente a deployar</h4>")
+        choice(name:'ENVIRONMENT', choices: ['DEV','PRD'], description: """<h4 style="margin-left: 15px">Ambiente a deployar</h4>" """)
     }
     stages {
         stage('DELETE LAST BUILD') {
@@ -68,11 +65,27 @@ pipeline {
                     script {
                         def sonnarScannerHome = tool 'sonar-scanner'
                      sh """${sonnarScannerHome}bin/sonar-scanner -Dsonar.projectKey=broideryBackend -Dsonar.projectName=Broidery-backend -Dsonar.projectVersion=1.0 -Dsonar.sourceEncoding=UTF-8 -Dsonar.visualstudio.enable=true -Dsonar.sources="${configuration.CHECKOUTS[0].WS}" -Dsonar.issuesReport.html.enable=true -Dsonar.host.url=http://192.168.0.135:9000 -Dsonar.projectBaseDir="${configuration.CHECKOUTS[0].WS}"/Broidery -Dsonar.visualstudio.solution=Broidery.sln """
+                     sh """${sonnarScannerHome}bin/sonar-scanner -Dsonar.projectKey=broideryFrontend -Dsonar.projectName=Broidery-frontend -Dsonar.projectVersion=1.0 -Dsonar.sourceEncoding=UTF-8 -Dsonar.visualstudio.enable=true -Dsonar.sources="${configuration.CHECKOUTS[1].WS}"/src -Dsonar.issuesReport.html.enable=true -Dsonar.host.url=http://192.168.0.135:9000 -Dsonar.projectBaseDir="${configuration.CHECKOUTS[1].WS}" """
+                    }
+                    dir(configuration.CHECKOUTS[0].WS){
+            /*      sh '''export PATH=/usr/local/share/dotnet:$PATH
+                    dotnet restore Broidery.sln
+                    '''
+                */    
+                        script{
+                            def sonnarMsBuildScannerHome = tool 'sonar-msbuild'
+                            sh """ ${sonnarMsBuildScannerHome}/sonar-scanner-4.4.0.2170/bin/sonar-scanner Broidery.sln /p:ProductVersion=1.0.0.${env.BUILD_NUMBER} """
+                           /*  mono """ ${sonnarMsBuildScannerHome}/sonar-scanner-4.4.0.2170/bin/sonar-scanner begin /k:Broidery-backend /d:sonar.host.url="http://192.168.0.135/:9000" /d:sonar.login="${sonar-token}" """
+                            mono "msbuild /t:Rebuild"
+                            mono """ ${sonnarMsBuildScannerHome}/sonar-scanner-4.4.0.2170/bin/sonar-scanner end /d:sonar.login="${sonar-token}" """
+                            */
+                        }
                     }
                 }
             }
         }
         stage('NPM INSTALL'){
+            tools { nodejs  'node' }
             steps {
             sh    """
                     cd "${configuration.CHECKOUTS[1].WS}"
