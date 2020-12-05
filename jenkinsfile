@@ -143,7 +143,11 @@ pipeline {
                 emailext attachmentsPattern: '*.txt',
                 subject: "Jenkins: " + configuration.APP + " | " + env.RESULTADO + " | "  + ENVIRONMENT + " | " + " build nº" + BUILD_NUMBER ,
                 body: '''${SCRIPT, template="jenkins_dtv_3.template"}''',
-                to: "${mailList}" 
+                to: "${mailList}"
+
+                slackSend color: '#BADASS', 
+                            message: "Jenkins: " + configuration.APP + " | " + env.RESULTADO + " | "  + ENVIRONMENT + " | " + " build nº" + BUILD_NUMBER ,",
+                            channel:''
             }
         }        
     }
