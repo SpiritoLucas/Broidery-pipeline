@@ -72,14 +72,14 @@ pipeline {
                     dotnet restore Broidery.sln
                     '''
                 */    
-                        script{
-                            def sonnarMsBuildScannerHome = tool 'sonar-msbuild'
-                            sh """ ${sonnarMsBuildScannerHome}/sonar-scanner-4.4.0.2170/bin/sonar-scanner Broidery.sln /p:ProductVersion=1.0.0.${env.BUILD_NUMBER} """
+        //                script{
+         //                   def sonnarMsBuildScannerHome = tool 'sonar-msbuild'
+          //                  sh """ ${sonnarMsBuildScannerHome}/sonar-scanner-4.4.0.2170/bin/sonar-scanner Broidery.sln /p:ProductVersion=1.0.0.${env.BUILD_NUMBER} """
                            /*  mono """ ${sonnarMsBuildScannerHome}/sonar-scanner-4.4.0.2170/bin/sonar-scanner begin /k:Broidery-backend /d:sonar.host.url="http://192.168.0.135/:9000" /d:sonar.login="${sonar-token}" """
                             mono "msbuild /t:Rebuild"
                             mono """ ${sonnarMsBuildScannerHome}/sonar-scanner-4.4.0.2170/bin/sonar-scanner end /d:sonar.login="${sonar-token}" """
                             */
-                        }
+          //              }
                     }
                 }
             }
@@ -144,10 +144,8 @@ pipeline {
                 subject: "Jenkins: " + configuration.APP + " | " + env.RESULTADO + " | "  + ENVIRONMENT + " | " + " build nº" + BUILD_NUMBER ,
                 body: '''${SCRIPT, template="jenkins_dtv_3.template"}''',
                 to: "${mailList}"
-
-                slackSend color: '#BADASS', 
-                            message: "Jenkins: " + configuration.APP + " | " + env.RESULTADO + " | "  + ENVIRONMENT + " | " + " build nº" + BUILD_NUMBER ,",
-                            channel:''
+    
+               slackSend channel: 'jenkins-test', color: '#439FE0', message:  configuration.APP + " | " + env.RESULTADO + " | "  + ENVIRONMENT + " | " + " build nº" + BUILD_NUMBER , teamDomain: 'papa-cultiva', tokenCredentialId: 'slack-token'
             }
         }        
     }
