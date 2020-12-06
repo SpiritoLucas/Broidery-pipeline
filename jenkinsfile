@@ -140,12 +140,14 @@ pipeline {
         always{
             script{    
                 env.RESULTADO = currentBuild.currentResult
+                
+                slackSend channel: 'jenkins-test', color: '#439FE0', message:  configuration.APP + " | " + env.RESULTADO + " | "  + ENVIRONMENT + " | " + " build nº" + BUILD_NUMBER , teamDomain: 'papa-cultiva', notifyCommitters: false, tokenCredentialId: 'slack-token'
+                
                 emailext attachmentsPattern: '*.txt',
                 subject: "Jenkins: " + configuration.APP + " | " + env.RESULTADO + " | "  + ENVIRONMENT + " | " + " build nº" + BUILD_NUMBER ,
                 body: '''${SCRIPT, template="jenkins_dtv_3.template"}''',
                 to: "${mailList}"
     
-               slackSend channel: 'jenkins-test', color: '#439FE0', message:  configuration.APP + " | " + env.RESULTADO + " | "  + ENVIRONMENT + " | " + " build nº" + BUILD_NUMBER , teamDomain: 'papa-cultiva', notifyCommitters: false, tokenCredentialId: 'slack-token'
             }
         }        
     }
