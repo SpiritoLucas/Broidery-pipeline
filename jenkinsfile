@@ -27,7 +27,7 @@ pipeline {
         SERVER_CREDENTIALS = credentials("${configuration.CREDENTIALS}")
     }
     parameters {
-        choice(name:'ENVIRONMENT', choices: ['DEV','PRD'], description: """<h4 style="margin-left: 15px">Ambiente a deployar</h4>" """)
+        choice(name:'ENVIRONMENT', choices: ['DEV','PRD'], description: """<h4 style="color: green; text-aling: left;">Ambiente a deployar</h4> """)
     }
     stages {
         stage('DELETE LAST BUILD') {
@@ -84,7 +84,7 @@ pipeline {
                 }
             }
         }
-        stage('NPM INSTALL'){
+        stage('BUILD FRONTEND'){
             tools { nodejs  'node' }
             steps {
             sh    """
@@ -95,7 +95,7 @@ pipeline {
             }
         }
 
-        stage('BUILD & RESTORE') {
+        stage('BUILD BACKEND') {
             when {
                 expression { params.ENVIRONMENT == 'DEV' }
             }
@@ -145,7 +145,7 @@ pipeline {
                 body: '''${SCRIPT, template="jenkins_dtv_3.template"}''',
                 to: "${mailList}"
     
-               slackSend channel: 'jenkins-test', color: '#439FE0', message:  configuration.APP + " | " + env.RESULTADO + " | "  + ENVIRONMENT + " | " + " build nº" + BUILD_NUMBER , teamDomain: 'papa-cultiva', tokenCredentialId: 'slack-token'
+               slackSend channel: 'jenkins-test', color: '#439FE0', message:  configuration.APP + " | " + env.RESULTADO + " | "  + ENVIRONMENT + " | " + " build nº" + BUILD_NUMBER , teamDomain: 'papa-cultiva', notifyCommitters: false, tokenCredentialId: 'slack-token'
             }
         }        
     }
