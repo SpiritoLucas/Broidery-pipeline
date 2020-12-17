@@ -1,5 +1,5 @@
-// Rev 0.0.2
-@Library('jenkins-library-local') _
+// Libreria personal en github como privada
+@Library('jenkins-library') _
 
 // CONFIG DE LA APLICACION
 String configFile = "/Volumes/TOSH-600/Broidery/Jenkins/Broidery-pipeline/config.json"
@@ -144,28 +144,13 @@ pipeline {
                 env.RESULTADO = currentBuild.currentResult
                 env.BRANCH = configuration.CHECKOUTS[0].SCM_BRANCH
                 
-                switch(env.RESULTADO) {
-                    case "SUCCESS":
-                        env.COLOR = 'good'
-                        break
-                    case "UNSTABLE":
-                        env.COLOR = 'warning'
-                        break
-                    case "FAILURE":
-                        env.COLOR = 'danger'
-                        break
-                    case "ABORTED":
-                        env.COLOR = '#5b5c5b'
-                        break  
-                }
-                
                 emailext attachmentsPattern: '*.txt',
                 subject: "Jenkins: " + configuration.APP + " | " + env.RESULTADO + " | "  + ENVIRONMENT + " | " + " build nº" + BUILD_NUMBER ,
                 body: '''${SCRIPT, template="jenkins_dtv_3.template"}''',
                 to: "${mailList}"
     
-                slackSend channel: 'jenkins-test', color: env.COLOR, message: '<' + env.BUILD_URL + '|' + env.JOB_BASE_NAME + '> | ' + ENVIRONMENT + ' | ' + env.ACTION + ' | Layer: ' + env.LAYER + ' | Branch: ' + env.BRANCH + ' | ' + env.RESULTADO, teamDomain: 'papa-cultiva', tokenCredentialId: 'slack-token'
+                slackNotifications()
             }
-        }        
+        }
     }
 }
