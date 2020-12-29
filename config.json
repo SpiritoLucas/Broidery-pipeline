@@ -17,12 +17,14 @@
         {
             "NAME": "DEV",
             "LABEL": "BAJOS",
+            "BRANCH": "development",
             "BACKEND_WS":"Broidery-backend/Broidery/Broidery.Api.DockerStartup",
             "FRONTEND_WS":"Broidery-frontend"
         },
         {
             "NAME": "PRD",
             "LABEL": "ALTOS",
+            "BRANCH": "production",
             "BACKEND_WS":"Broidery-backend/Broidery/Broidery.Api.DockerStartup",
             "FRONTEND_WS":"Broidery-frontend"
         }
