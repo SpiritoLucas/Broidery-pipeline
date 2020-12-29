@@ -36,13 +36,6 @@ pipeline {
             steps {
                 sh " rm -rf *"
                 sh "rm -rf /usr/local/var/www/*"
-                // sh '''
-                //     export PATH=/usr/local/share/supervisor:$PATH
-                    sh "/usr/local/Cellar/nginx/1.19.5/bin/nginx -s stop"
-                    sh "/usr/local/Cellar/nginx/1.19.5/bin/nginx"
-                //     supervisorctl stop broidery
-                //     nginx -s stop
-                // '''
             }
         }
 
@@ -67,7 +60,6 @@ pipeline {
                 withSonarQubeEnv('SonarQube'){
                     script {
                         def sonnarScannerHome = tool 'sonar-scanner'
-                //    sh """${sonnarScannerHome}bin/sonar-scanner -Dsonar.projectKey=broideryBackend -Dsonar.projectName=Broidery-backend -Dsonar.projectVersion=1.0 -Dsonar.sourceEncoding=UTF-8 -Dsonar.visualstudio.enable=true -Dsonar.sources="${configuration.CHECKOUTS[0].WS}/Broidery" -Dsonar.issuesReport.html.enable=true -Dsonar.host.url=http://192.168.0.135:9000 -Dsonar.projectBaseDir="${configuration.CHECKOUTS[0].WS}/Broidery" -Dsonar.visualstudio.solution=Broidery.sln """
                     sh """${sonnarScannerHome}bin/sonar-scanner -Dsonar.projectKey=broideryFrontend -Dsonar.projectName=Broidery-frontend -Dsonar.projectVersion=1.0 -Dsonar.sourceEncoding=UTF-8 -Dsonar.visualstudio.enable=true -Dsonar.sources="${configuration.CHECKOUTS[1].WS}" -Dsonar.issuesReport.html.enable=true -Dsonar.host.url=http://192.168.0.135:9000 -Dsonar.projectBaseDir="${configuration.CHECKOUTS[1].WS}" """
                     }
                 }
@@ -81,17 +73,13 @@ pipeline {
                         def mono = "/Library/Frameworks/Mono.framework/Commands/mono"
                         def sonarMsbuildExe = "/Users/lucas/.jenkins/tools/hudson.plugins.sonar.MsBuildSQRunnerInstallation/sonar-msbuild/SonarScanner.MSBuild.exe"
                         def msbuild = "/Library/Frameworks/Mono.framework/Commands/msbuild"
-                    //sh """${sonnarMsBuildScannerHome}/sonar-scanner-4.4.0.2170/bin/sonar-scanner -Dsonar.projectKey=broideryBackend -Dsonar.projectName=Broidery-backend -Dsonar.projectVersion=1.0 -Dsonar.sourceEncoding=UTF-8 -Dsonar.visualstudio.enable=true -Dsonar.sources="${configuration.CHECKOUTS[0].WS}/Broidery" -Dsonar.issuesReport.html.enable=true -Dsonar.host.url=http://192.168.0.135:9000 -Dsonar.projectBaseDir="${configuration.CHECKOUTS[0].WS}/Broidery" -Dsonar.visualstudio.solution=Broidery.sln """
-                //    sh """/Library/Frameworks/Mono.framework/Commands/msbuild -Dsonar.projectKey=broideryBackend -Dsonar.projectName=Broidery-backend -Dsonar.projectVersion=1.0 -Dsonar.sourceEncoding=UTF-8 -Dsonar.visualstudio.enable=true -Dsonar.sources="${configuration.CHECKOUTS[0].WS}/Broidery" -Dsonar.issuesReport.html.enable=true -Dsonar.host.url=http://192.168.0.135:9000 -Dsonar.projectBaseDir="${configuration.CHECKOUTS[0].WS}/Broidery" -Dsonar.visualstudio.solution=Broidery.sln  """
+                        def solutionFile = "/Users/lucas/.jenkins/workspace/Broidery/Broidery-backend/Broidery/Broidery.sln"
                     sh """
                           export PATH=/usr/local/share/dotnet:$PATH  
-                          "${mono}" /Users/lucas/.jenkins/tools/hudson.plugins.sonar.MsBuildSQRunnerInstallation/sonar-msbuild/SonarScanner.MSBuild.exe begin /k:broideryBackend /d:sonar.verbose=true /v:sonar.projectVersion=1.0 /d:sonar.issuesReport.html.enable=true /d:sonar.login="eec243d0769bdca130483d5ab76d38679e4c36da"
-                           dotnet build /Users/lucas/.jenkins/workspace/Broidery/Broidery-backend/Broidery/Broidery.sln
-                          "${mono}" /Users/lucas/.jenkins/tools/hudson.plugins.sonar.MsBuildSQRunnerInstallation/sonar-msbuild/SonarScanner.MSBuild.exe end /d:sonar.login="eec243d0769bdca130483d5ab76d38679e4c36da"
-                    """
-                    //sh '''export PATH=/usr/local/share/dotnet:$PATH dotnet sonarscanner -Dsonar.projectKey=broideryBackend -Dsonar.projectName=Broidery-backend -Dsonar.projectVersion=1.0 -Dsonar.sourceEncoding=UTF-8 -Dsonar.visualstudio.enable=true -Dsonar.sources=. -Dsonar.issuesReport.html.enable=true -Dsonar.host.url=http://192.168.0.135:9000 -Dsonar.visualstudio.solution=Broidery.sln '''
-                  //  invokeJob('TEMPLATES/MSBUILD_COMPILE',['WS':configuration.CHECKOUTS[0].WS,'SQNAME':'Broidery-backend','COMPILATION':'/Users/lucas/.jenkins/tools/hudson.plugins.sonar.MsBuildSQRunnerInstallation/sonar-msbuild/SonarScanner.MSBuild.exe','SOLUTIONFILE':"${configuration.CHECKOUTS[0].WS}/Broidery/Broidery.sln",'COMPILATIONARGUMENTS':"/t:restore /target:publish /p:Configuration=DEV;InstallUrl=http://192.168.0.135:9000 /p:ApplicationVersion=1.0;ProductName=\"DEV\"",'RUN_SQ':true])
-                   //sh  """/Users/lucas/.jenkins/tools/hudson.plugins.sonar.MsBuildSQRunnerInstallation/sonar-msbuild/sonar-scanner-4.4.0.217/bin/sonar-scanner -Dsonar.projectKey=broideryFrontend -Dsonar.projectName=Broidery-backend -Dsonar.projectVersion=1.0 -Dsonar.sourceEncoding=UTF-8 -Dsonar.visualstudio.enable=true -Dsonar.sources="${configuration.CHECKOUTS[0].WS}" -Dsonar.issuesReport.html.enable=true -Dsonar.host.url=http://192.168.0.135:9000 -Dsonar.projectBaseDir="${configuration.CHECKOUTS[0].WS}" """
+                          "${mono}" "${sonarMsbuildExe}" begin /k:broideryBackend /d:sonar.verbose=true /v:sonar.projectVersion=1.0 /d:sonar.issuesReport.html.enable=true /d:sonar.login="eec243d0769bdca130483d5ab76d38679e4c36da"
+                           dotnet build "${solutionFile}"
+                          "${mono}" "${sonarMsbuildExe}" end /d:sonar.login="eec243d0769bdca130483d5ab76d38679e4c36da"
+                    """ 
                     }
                 }
             }
@@ -115,8 +103,6 @@ pipeline {
             sh '''
             export PATH=/usr/local/share/dotnet:$PATH
             cd Broidery-backend/Broidery/Broidery.Api.DockerStartup
-            dotnet restore
-            dotnet build  
             dotnet publish --configuration Release --runtime osx-x64                          
             '''
             }
@@ -124,20 +110,10 @@ pipeline {
 
         stage('UPLOAD ARTIFACT') {
             steps {
-
-                
-                 sh '''#!/bin/zsh 
-                 cd Broidery-backend/Broidery/Broidery.Api.DockerStartup/bin/Debug/netcoreapp3.1/
-                 zip -r ./broidery-backend.zip ./publish
-                 '''
-                 uploadArti WS: workingDir pattern: "broidery-backend.zip" target: "DevOps/broidery-backend/"
-
-                // cd /Users/lucas/.jenkins/workspace/Broidery/Broidery-frontend/
-                // zip -r ./dist.zip ./dist 
-                // mv /Users/lucas/.jenkins/workspace/Broidery/Broidery-backend/Broidery/Broidery.Api.DockerStartup/bin/Debug/netcoreapp3.1/publish.zip .
-                // mv dist.zip ../
-                // ls ../
-                // '''
+                 zip archive: true, dir: 'Broidery-backend/Broidery/Broidery.Api.DockerStartup/bin/Release/netcoreapp3.1/osx-x64/', glob: '', overwrite: false, zipFile: """broidery-backend.zip"""
+                 uploadArti WS: '.' , pattern: "broidery-backend.zip", target: "DevOps/${ENVIRONMENT}/Backend/${BUILD_NUMBER}/"
+                 zip archive: true, dir: 'Broidery-frontend/dist/Broidery-frontend/', glob: '', overwrite: false, zipFile: "broidery-frontend.zip"
+                 uploadArti WS: '.' , pattern: "broidery-frontend.zip", target: "DevOps/${ENVIRONMENT}/Frontend/${BUILD_NUMBER}/"
             }
         }
         
@@ -150,7 +126,12 @@ pipeline {
                 echo 'BACKEND PUBLICADO EN http://localhost:8082/ Y EN http://192.168.0.135:8082/'
             }
         }
-
+        stage('RESTART APP SERVICE'){
+            steps{
+                sh '/usr/local/bin/supervisorctl restart broidery'
+                sh "/usr/local/Cellar/nginx/1.19.5/bin/nginx -s reload"
+            }
+        }
     }
     post {
         always{
